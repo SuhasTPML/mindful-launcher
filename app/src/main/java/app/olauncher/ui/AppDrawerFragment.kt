@@ -77,6 +77,45 @@ class AppDrawerFragment : Fragment() {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+
+        // Build A–Z index
+        try {
+            val container = view?.findViewById<LinearLayout>(R.id.alphaIndex)
+            container?.removeAllViews()
+            val letters = ('A'..'Z').toList()
+            letters.forEach { ch ->
+                val tv = TextView(requireContext())
+                tv.text = ch.toString()
+                tv.setTextAppearance(R.style.TextSmall)
+                tv.alpha = 0.7f
+                container?.addView(tv)
+            }
+            container?.setOnTouchListener { v, event ->
+                if (letters.isEmpty()) return@setOnTouchListener false
+                val top = v.paddingTop
+                val height = v.height - v.paddingTop - v.paddingBottom
+                val per = height.toFloat() / letters.size
+                val y = (event.y - top).coerceIn(0f, height.toFloat())
+                val idx = (y / per).toInt().coerceIn(0, letters.size - 1)
+                val letter = letters[idx]
+                scrollToLetter(letter)
+                true
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun scrollToLetter(letter: Char) {
+        try {
+            val normalized = letter.uppercaseChar()
+            val list = adapter.appFilteredList
+            val pos = list.indexOfFirst { model ->
+                val label = model.appLabel.trim()
+                if (label.isEmpty()) false else label[0].uppercaseChar() == normalized
+            }
+            if (pos >= 0) binding.recyclerView.scrollToPosition(pos)
+        } catch (e: Exception) { e.printStackTrace() }
     }
 
     private fun initSearch() {
