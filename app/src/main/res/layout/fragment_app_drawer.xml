@@ -93,4 +93,21 @@
         android:paddingEnd="4dp"
         android:clipToPadding="false" />
 
+    <!-- Transient Letter Overlay -->
+    <TextView
+        android:id="@+id/alphaOverlayLetter"
+        style="@style/TextLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:background="@drawable/bg_letter_overlay"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
+        android:text="A"
+        android:textColor="?attr/colorOnSurface"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
 </FrameLayout>

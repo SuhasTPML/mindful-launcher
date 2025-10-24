@@ -37,6 +37,9 @@ class AppDrawerFragment : Fragment() {
     private lateinit var prefs: Prefs
     private lateinit var adapter: AppDrawerAdapter
     private lateinit var linearLayoutManager: LinearLayoutManager
+    private var overlayLetterView: TextView? = null
+    private var lastOverlayChar: Char? = null
+    private var overlayHideRunnable: Runnable? = null
 
     private var flag = Constants.FLAG_LAUNCH_APP
     private var canRename = false
@@ -82,6 +85,7 @@ class AppDrawerFragment : Fragment() {
 
         // Build A–Z index
         try {
+            overlayLetterView = view?.findViewById(R.id.alphaOverlayLetter)
             val container = view?.findViewById<LinearLayout>(R.id.alphaIndex)
             container?.removeAllViews()
             val letters = ('A'..'Z').toList()
@@ -100,8 +104,18 @@ class AppDrawerFragment : Fragment() {
                 val y = (event.y - top).coerceIn(0f, height.toFloat())
                 val idx = (y / per).toInt().coerceIn(0, letters.size - 1)
                 val letter = letters[idx]
-                scrollToLetter(letter)
-                true
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
+                        showOverlayLetter(letter)
+                        scrollToLetter(letter)
+                        true
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        hideOverlayLetterDelayed()
+                        true
+                    }
+                    else -> false
+                }
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -117,6 +131,36 @@ class AppDrawerFragment : Fragment() {
                 if (label.isEmpty()) false else label[0].uppercaseChar() == normalized
             }
             if (pos >= 0) binding.recyclerView.scrollToPosition(pos)
+        } catch (e: Exception) { e.printStackTrace() }
+    }
+
+    private fun showOverlayLetter(letter: Char) {
+        try {
+            if (lastOverlayChar != letter) {
+                // Optional haptic feedback on change
+                view?.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+                lastOverlayChar = letter
+            }
+            overlayHideRunnable?.let { overlayLetterView?.removeCallbacks(it) }
+            overlayLetterView?.apply {
+                text = letter.toString()
+                contentDescription = getString(R.string.search)
+                alpha = 1f
+                visibility = android.view.View.VISIBLE
+            }
+        } catch (e: Exception) { e.printStackTrace() }
+    }
+
+    private fun hideOverlayLetterDelayed(delayMs: Long = 600L) {
+        try {
+            val r = Runnable {
+                overlayLetterView?.animate()?.alpha(0f)?.setDuration(150)?.withEndAction {
+                    overlayLetterView?.visibility = android.view.View.GONE
+                    overlayLetterView?.alpha = 1f
+                }?.start()
+            }
+            overlayHideRunnable = r
+            overlayLetterView?.postDelayed(r, delayMs)
         } catch (e: Exception) { e.printStackTrace() }
     }
 
