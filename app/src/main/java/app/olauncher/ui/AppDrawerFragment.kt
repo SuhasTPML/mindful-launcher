@@ -1,6 +1,9 @@
 package app.olauncher.ui
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.MotionEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -28,6 +31,7 @@ import app.olauncher.helper.showKeyboard
 import app.olauncher.helper.showToast
 import app.olauncher.helper.uninstall
 import androidx.appcompat.app.AlertDialog
+import java.text.Normalizer
 
 
 class AppDrawerFragment : Fragment() {
@@ -38,6 +42,12 @@ class AppDrawerFragment : Fragment() {
 
     private var flag = Constants.FLAG_LAUNCH_APP
     private var canRename = false
+
+    // A–Z fast scroll index support
+    private val letters: List<Char> = ('A'..'Z').toList()
+    private val letterPositions: MutableMap<Char, Int> = mutableMapOf()
+    private val overlayHideHandler = Handler(Looper.getMainLooper())
+    private val overlayHideRunnable = Runnable { binding.letterOverlay.visibility = View.GONE }
 
     private val viewModel: MainViewModel by activityViewModels()
     private var _binding: FragmentAppDrawerBinding? = null
@@ -64,6 +74,7 @@ class AppDrawerFragment : Fragment() {
         initAdapter()
         initObservers()
         initClickListeners()
+        initLetterIndex()
     }
 
     private fun initViews() {
@@ -96,6 +107,7 @@ class AppDrawerFragment : Fragment() {
                     adapter.filter.filter(newText)
                     binding.appDrawerTip.visibility = View.GONE
                     binding.appRename.visibility = if (canRename && newText.isNotBlank()) View.VISIBLE else View.GONE
+                    binding.recyclerView.post { rebuildLetterPositions() }
                     return true
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -195,6 +207,77 @@ class AppDrawerFragment : Fragment() {
         if (requireContext().isEinkDisplay().not())
             binding.recyclerView.layoutAnimation =
                 AnimationUtils.loadLayoutAnimation(requireContext(), R.anim.layout_anim_from_bottom)
+
+        // Build initial letter positions once list is ready
+        rebuildLetterPositions()
+    }
+
+    private fun initLetterIndex() {
+        // Populate A–Z index vertically
+        binding.letterIndex.removeAllViews()
+        letters.forEach { ch ->
+            val tv = layoutInflater.inflate(R.layout.item_letter_index, binding.letterIndex, false) as TextView
+            tv.text = ch.toString()
+            binding.letterIndex.addView(tv)
+        }
+
+        // Touch handler maps Y to letter, scrolls and shows overlay
+        binding.letterIndex.setOnTouchListener { v, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
+                    val letter = letterForY(v.height, event.y)
+                    if (letter != null) {
+                        showLetterOverlay(letter)
+                        scrollToLetter(letter)
+                    }
+                    true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    overlayHideHandler.removeCallbacks(overlayHideRunnable)
+                    overlayHideHandler.postDelayed(overlayHideRunnable, 600)
+                    true
+                }
+                else -> false
+            }
+        }
+    }
+
+    private fun letterForY(viewHeight: Int, y: Float): Char? {
+        if (viewHeight <= 0) return null
+        val slot = (y / viewHeight * letters.size).toInt().coerceIn(0, letters.size - 1)
+        return letters[slot]
+    }
+
+    private fun showLetterOverlay(letter: Char) {
+        binding.letterOverlay.text = letter.toString()
+        binding.letterOverlay.visibility = View.VISIBLE
+        overlayHideHandler.removeCallbacks(overlayHideRunnable)
+    }
+
+    private fun rebuildLetterPositions() {
+        letterPositions.clear()
+        val list = adapter.appFilteredList
+        for (i in list.indices) {
+            val ch = normalizedFirstChar(list[i].appLabel)
+            if (ch != null && ch in 'A'..'Z' && ch !in letterPositions) {
+                letterPositions[ch] = i
+            }
+        }
+    }
+
+    private fun normalizedFirstChar(label: String): Char? {
+        val trimmed = label.trim()
+        if (trimmed.isEmpty()) return null
+        val base = Normalizer.normalize(trimmed, Normalizer.Form.NFD)
+            .replace(Regex("\\p{InCombiningDiacriticalMarks}+"), "")
+            .trim()
+        return base.firstOrNull { it.isLetterOrDigit() }?.uppercaseChar()
+    }
+
+    private fun scrollToLetter(letter: Char) {
+        letterPositions[letter]?.let { pos ->
+            linearLayoutManager.scrollToPositionWithOffset(pos, 0)
+        }
     }
 
     private fun showDelayStepper(packageName: String) {
@@ -239,6 +322,7 @@ class AppDrawerFragment : Fragment() {
                 it?.let { appModels ->
                     adapter.setAppList(appModels.toMutableList())
                     adapter.filter.filter(binding.search.query)
+                    binding.recyclerView.post { rebuildLetterPositions() }
                 }
             }
         }

@@ -22,13 +22,14 @@
             android:layout_weight="1"
             android:gravity="end"
             android:imeOptions="actionSearch"
-            android:paddingHorizontal="3dp"
-            android:paddingVertical="0dp"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="6dp"
+            android:background="@drawable/bg_search_rounded"
             android:textCursorDrawable="@null"
             app:closeIcon="@null"
             app:iconifiedByDefault="false"
             app:queryBackground="@null"
-            app:queryHint="___"
+            app:queryHint="@string/search"
             app:searchIcon="@null"
             app:theme="@style/AppSearchText" />
 
@@ -73,5 +74,29 @@
         android:clipToPadding="false"
         android:fadingEdgeLength="24dp"
         android:requiresFadingEdge="vertical" />
+
+    <!-- Transient letter overlay shown while dragging the A–Z index -->
+    <TextView
+        android:id="@+id/letterOverlay"
+        style="@style/TextLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:padding="16dp"
+        android:background="@drawable/bg_letter_overlay"
+        android:visibility="gone"
+        android:text="A" />
+
+    <!-- Right-side A–Z fast scroll index -->
+    <LinearLayout
+        android:id="@+id/letterIndex"
+        android:layout_width="28dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="end"
+        android:paddingVertical="32dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:clickable="true"
+        android:focusable="true" />
 
 </FrameLayout>
