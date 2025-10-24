@@ -176,7 +176,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         val currentSec = (prefs.mindfulDelayMs / 1000).coerceAtLeast(0)
         val newSec = (currentSec + delta).coerceIn(0, 10)
         prefs.mindfulDelayMs = newSec * 1000
-        binding.mindfulDelayValue.text = newSec.toString()
+        binding.mindfulDelayValue?.text = newSec.toString()
     }
 
     override fun onLongClick(view: View): Boolean {
@@ -209,8 +209,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.olauncherPro.setOnClickListener(this)
         binding.autoShowKeyboard.setOnClickListener(this)
         binding.toggleLock.setOnClickListener(this)
-        binding.mindfulDelayMinus.setOnClickListener(this)
-        binding.mindfulDelayPlus.setOnClickListener(this)
+        binding.mindfulDelayMinus?.setOnClickListener(this)
+        binding.mindfulDelayPlus?.setOnClickListener(this)
         binding.homeAppsNum.setOnClickListener(this)
         binding.screenTimeOnOff.setOnClickListener(this)
         binding.dailyWallpaperUrl.setOnClickListener(this)
@@ -293,7 +293,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
     private fun populateMindfulDelay() {
         val seconds = prefs.mindfulDelayMs / 1000
-        binding.mindfulDelayValue.text = seconds.toString()
+        binding.mindfulDelayValue?.text = seconds.toString()
     }
 
     private fun toggleSwipeLeft() {
