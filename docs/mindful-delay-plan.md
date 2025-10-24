@@ -10,33 +10,6 @@ This document captures the agreed scope and UI/UX for adding configurable per‑
 - Drawer gains an A–Z fast scroll index on the right.
 - Mindful overlay gets a clearer countdown UI with optional intention note.
 
-## Status (Live)
-
-- [x] Phase 1 — Settings: Manage Delayed Apps implemented (per-app delay edit + disable, launch resolution uses per-app > global).
-- [x] Home bottom sheet: Mindful Delay toggle (Enable/Disable) with theme-aware colors; disabled when slot has no app.
-- [x] Drawer polish: rounded search container and A–Z index added.
-- [ ] Transient letter overlay while dragging A–Z.
-- [ ] Overlay visual enhancements (icon, circular progress, intention note, Edit link).
-
-## Next Phase Details (Drawer Enhancements)
-
-- Add transient letter overlay while dragging A–Z index
-  - Centered overlay with current letter, large text, themed colors (colorSurface/colorOnSurface)
-  - Updates as you drag; hides 500–800 ms after last movement
-  - Haptic feedback on letter change (if available)
-  - Fallback '#' for non‑Latin/unknown initials
-- Improve index rail touch handling
-  - Handle ACTION_DOWN/MOVE/UP; capture and prevent accidental list scroll during drag
-  - Slight scale/alpha effect on the active letter in the rail (optional)
-- Accessibility
-  - Content description updates for TalkBack ('Jump to letter G')
-  - Ensure focus is not stolen; list remains scrollable outside the rail
-
-Acceptance
-- Overlay appears on drag, updates smoothly, hides after delay
-- Jump positions correctly even with renamed labels and multi‑profile
-- Light/dark theme contrast is readable
-
 ## Scope
 
 - Add Settings → Mindful Delay section:
@@ -199,3 +172,4 @@ ASCII – Overlay
 - Keep Settings the single place to edit seconds to minimize UI complexity.
 - Ensure renamed apps are indexed under their display label for A–Z.
 - Multi‑profile support: index and launch must include user handle.
+

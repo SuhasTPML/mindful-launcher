@@ -14,29 +14,23 @@
         android:animateLayoutChanges="true"
         android:orientation="horizontal">
 
-        <LinearLayout
+        <androidx.appcompat.widget.SearchView
+            android:id="@+id/search"
             android:layout_width="0dp"
-            android:layout_height="48dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="32dp"
             android:layout_weight="1"
-            android:layout_marginStart="20dp"
-            android:layout_marginEnd="20dp"
-            android:background="@drawable/bg_search_rounded"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="12dp">
-
-            <androidx.appcompat.widget.SearchView
-                android:id="@+id/search"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:imeOptions="actionSearch"
-                android:textCursorDrawable="@null"
-                app:closeIcon="@null"
-                app:iconifiedByDefault="false"
-                app:queryBackground="@null"
-                app:queryHint="___"
-                app:searchIcon="@null"
-                app:theme="@style/AppSearchText" />
-        </LinearLayout>
+            android:gravity="end"
+            android:imeOptions="actionSearch"
+            android:paddingHorizontal="3dp"
+            android:paddingVertical="0dp"
+            android:textCursorDrawable="@null"
+            app:closeIcon="@null"
+            app:iconifiedByDefault="false"
+            app:queryBackground="@null"
+            app:queryHint="___"
+            app:searchIcon="@null"
+            app:theme="@style/AppSearchText" />
 
         <TextView
             android:id="@+id/appRename"
@@ -79,35 +73,5 @@
         android:clipToPadding="false"
         android:fadingEdgeLength="24dp"
         android:requiresFadingEdge="vertical" />
-
-    <!-- A–Z Fast Scroll Index -->
-    <LinearLayout
-        android:id="@+id/alphaIndex"
-        android:layout_width="36dp"
-        android:layout_height="match_parent"
-        android:layout_gravity="end"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
-        android:paddingTop="180dp"
-        android:paddingBottom="24dp"
-        android:paddingEnd="8dp"
-        android:clipToPadding="false" />
-
-    <!-- Transient Letter Overlay -->
-    <TextView
-        android:id="@+id/alphaOverlayLetter"
-        style="@style/TextLarge"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:background="@drawable/bg_letter_overlay"
-        android:paddingStart="24dp"
-        android:paddingEnd="24dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="12dp"
-        android:text="A"
-        android:textColor="?attr/colorOnSurface"
-        android:visibility="gone"
-        tools:visibility="visible" />
 
 </FrameLayout>

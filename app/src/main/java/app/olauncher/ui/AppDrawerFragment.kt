@@ -28,8 +28,6 @@ import app.olauncher.helper.showKeyboard
 import app.olauncher.helper.showToast
 import app.olauncher.helper.uninstall
 import androidx.appcompat.app.AlertDialog
-import android.widget.LinearLayout
-import android.view.MotionEvent
 
 
 class AppDrawerFragment : Fragment() {
@@ -37,9 +35,6 @@ class AppDrawerFragment : Fragment() {
     private lateinit var prefs: Prefs
     private lateinit var adapter: AppDrawerAdapter
     private lateinit var linearLayoutManager: LinearLayoutManager
-    private var overlayLetterView: TextView? = null
-    private var lastOverlayChar: Char? = null
-    private var overlayHideRunnable: Runnable? = null
 
     private var flag = Constants.FLAG_LAUNCH_APP
     private var canRename = false
@@ -82,88 +77,6 @@ class AppDrawerFragment : Fragment() {
         } catch (e: Exception) {
             e.printStackTrace()
         }
-
-        // Build A–Z index
-        try {
-            overlayLetterView = view?.findViewById(R.id.alphaOverlayLetter)
-            val container = view?.findViewById<LinearLayout>(R.id.alphaIndex)
-            container?.removeAllViews()
-            val letters = ('A'..'Z').toList()
-            letters.forEach { ch ->
-                val tv = TextView(requireContext())
-                tv.text = ch.toString()
-                tv.setTextAppearance(R.style.TextSmall)
-                tv.alpha = 0.8f
-                tv.minHeight = resources.displayMetrics.density.times(24).toInt()
-                tv.setPadding(0, (resources.displayMetrics.density*2).toInt(), 0, (resources.displayMetrics.density*2).toInt())
-                container?.addView(tv)
-            }
-            container?.setOnTouchListener { v: android.view.View, event: MotionEvent ->
-                if (letters.isEmpty()) return@setOnTouchListener false
-                val top = v.paddingTop
-                val height = v.height - v.paddingTop - v.paddingBottom
-                val per = height.toFloat() / letters.size
-                val y = (event.y - top).coerceIn(0f, height.toFloat())
-                val idx = (y / per).toInt().coerceIn(0, letters.size - 1)
-                val letter = letters[idx]
-                when (event.actionMasked) {
-                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
-                        showOverlayLetter(letter)
-                        scrollToLetter(letter)
-                        true
-                    }
-                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                        hideOverlayLetterDelayed()
-                        true
-                    }
-                    else -> false
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun scrollToLetter(letter: Char) {
-        try {
-            val normalized = letter.uppercaseChar()
-            val list = adapter.appFilteredList
-            val pos = list.indexOfFirst { model ->
-                val label = model.appLabel.trim()
-                if (label.isEmpty()) false else label[0].uppercaseChar() == normalized
-            }
-            if (pos >= 0) binding.recyclerView.scrollToPosition(pos)
-        } catch (e: Exception) { e.printStackTrace() }
-    }
-
-    private fun showOverlayLetter(letter: Char) {
-        try {
-            if (lastOverlayChar != letter) {
-                // Optional haptic feedback on change
-                view?.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
-                lastOverlayChar = letter
-            }
-            overlayHideRunnable?.let { overlayLetterView?.removeCallbacks(it) }
-            overlayLetterView?.apply {
-                text = letter.toString()
-                contentDescription = getString(R.string.search)
-                alpha = 1f
-                visibility = android.view.View.VISIBLE
-            }
-        } catch (e: Exception) { e.printStackTrace() }
-    }
-
-    private fun hideOverlayLetterDelayed(delayMs: Long = 600L) {
-        try {
-            val r = Runnable {
-                overlayLetterView?.animate()?.alpha(0f)?.setDuration(150)?.withEndAction {
-                    overlayLetterView?.visibility = android.view.View.GONE
-                    overlayLetterView?.alpha = 1f
-                }?.start()
-            }
-            overlayHideRunnable = r
-            overlayLetterView?.postDelayed(r, delayMs)
-        } catch (e: Exception) { e.printStackTrace() }
     }
 
     private fun initSearch() {

@@ -170,7 +170,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.mindfulDelayMinus -> updateMindfulDelay(-1)
             R.id.mindfulDelayPlus -> updateMindfulDelay(+1)
             R.id.manageDelayedApps -> findNavController().navigate(R.id.action_settingsFragment_to_manageDelayedAppsFragment)
-            R.id.exportLogs -> exportLogs()
         }
     }
 
@@ -179,27 +178,6 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         val newSec = (currentSec + delta).coerceIn(0, 10)
         prefs.mindfulDelayMs = newSec * 1000
         binding.mindfulDelayValue?.text = newSec.toString()
-    }
-
-    private fun exportLogs() {
-        try {
-            val dir = requireContext().getExternalFilesDir("logs") ?: requireContext().filesDir
-            val files = dir.listFiles()?.filter { it.isFile && it.name.endsWith(".log") }?.sortedByDescending { it.lastModified() }
-            val latest = files?.firstOrNull()
-            if (latest == null) {
-                requireContext().showToast(getString(R.string.no_logs_found))
-                return
-            }
-            val content = latest.readText()
-            val send = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_SUBJECT, "Mindful Launcher Logs: ${latest.name}")
-                putExtra(Intent.EXTRA_TEXT, content)
-            }
-            startActivity(Intent.createChooser(send, getString(R.string.export_logs)))
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 
     override fun onLongClick(view: View): Boolean {
