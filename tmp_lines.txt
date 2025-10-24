@@ -1,0 +1,406 @@
+1: 	package app.olauncher.ui
+2: 	
+3: 	import android.os.Bundle
+4: 	import android.os.Handler
+5: 	import android.os.Looper
+6: 	import android.view.MotionEvent
+7: 	import android.view.LayoutInflater
+8: 	import android.view.View
+9: 	import android.view.ViewGroup
+10: 	import android.view.animation.AnimationUtils
+11: 	import android.widget.TextView
+12: 	import androidx.appcompat.widget.SearchView
+13: 	import androidx.fragment.app.Fragment
+14: 	import androidx.fragment.app.activityViewModels
+15: 	import androidx.navigation.fragment.findNavController
+16: 	import androidx.recyclerview.widget.LinearLayoutManager
+17: 	import androidx.recyclerview.widget.RecyclerView
+18: 	import androidx.recyclerview.widget.RecyclerView.Recycler
+19: 	import app.olauncher.MainViewModel
+20: 	import app.olauncher.R
+21: 	import app.olauncher.data.Constants
+22: 	import app.olauncher.data.Prefs
+23: 	import app.olauncher.databinding.FragmentAppDrawerBinding
+24: 	import app.olauncher.helper.hideKeyboard
+25: 	import app.olauncher.helper.isEinkDisplay
+26: 	import app.olauncher.helper.isSystemApp
+27: 	import app.olauncher.helper.openAppInfo
+28: 	import app.olauncher.helper.openSearch
+29: 	import app.olauncher.helper.openUrl
+30: 	import app.olauncher.helper.showKeyboard
+31: 	import app.olauncher.helper.showToast
+32: 	import app.olauncher.helper.uninstall
+33: 	import androidx.appcompat.app.AlertDialog
+34: 	import java.text.Normalizer
+35: 	
+36: 	
+37: 	class AppDrawerFragment : Fragment() {
+38: 	
+39: 	    private lateinit var prefs: Prefs
+40: 	    private lateinit var adapter: AppDrawerAdapter
+41: 	    private lateinit var linearLayoutManager: LinearLayoutManager
+42: 	
+43: 	    private var flag = Constants.FLAG_LAUNCH_APP
+44: 	    private var canRename = false
+45: 	
+46: 	    // A–Z fast scroll index support
+47: 	    private val letters: List<Char> = ('A'..'Z').toList()
+48: 	    private val letterPositions: MutableMap<Char, Int> = mutableMapOf()
+49: 	    private val overlayHideHandler = Handler(Looper.getMainLooper())
+50: 	    private val overlayHideRunnable = Runnable { binding.letterOverlay.visibility = View.GONE }
+51: 	
+52: 	    private val viewModel: MainViewModel by activityViewModels()
+53: 	    private var _binding: FragmentAppDrawerBinding? = null
+54: 	    private val binding get() = _binding!!
+55: 	
+56: 	    override fun onCreateView(
+57: 	        inflater: LayoutInflater,
+58: 	        container: ViewGroup?,
+59: 	        savedInstanceState: Bundle?,
+60: 	    ): View {
+61: 	        _binding = FragmentAppDrawerBinding.inflate(inflater, container, false)
+62: 	        return binding.root
+63: 	    }
+64: 	
+65: 	    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+66: 	        super.onViewCreated(view, savedInstanceState)
+67: 	        prefs = Prefs(requireContext())
+68: 	        arguments?.let {
+69: 	            flag = it.getInt(Constants.Key.FLAG, Constants.FLAG_LAUNCH_APP)
+70: 	            canRename = it.getBoolean(Constants.Key.RENAME, false)
+71: 	        }
+72: 	        initViews()
+73: 	        initSearch()
+74: 	        initAdapter()
+75: 	        initObservers()
+76: 	        initClickListeners()
+77: 	        initLetterIndex()
+78: 	    }
+79: 	
+80: 	    private fun initViews() {
+81: 	        if (flag == Constants.FLAG_HIDDEN_APPS)
+82: 	            binding.search.queryHint = getString(R.string.hidden_apps)
+83: 	        else if (flag in Constants.FLAG_SET_HOME_APP_1..Constants.FLAG_SET_CALENDAR_APP)
+84: 	            binding.search.queryHint = "Please select an app"
+85: 	        try {
+86: 	            val searchTextView = binding.search.findViewById<TextView>(R.id.search_src_text)
+87: 	            if (searchTextView != null) searchTextView.gravity = prefs.appLabelAlignment
+88: 	        } catch (e: Exception) {
+89: 	            e.printStackTrace()
+90: 	        }
+91: 	    }
+92: 	
+93: 	    private fun initSearch() {
+94: 	        binding.search.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+95: 	            override fun onQueryTextSubmit(query: String?): Boolean {
+96: 	                if (query?.startsWith("!") == true)
+97: 	                    requireContext().openUrl(Constants.URL_DUCK_SEARCH + query.replace(" ", "%20"))
+98: 	                else if (adapter.itemCount == 0) // && requireContext().searchOnPlayStore(query?.trim()).not())
+99: 	                    requireContext().openSearch(query?.trim())
+100: 	                else
+101: 	                    adapter.launchFirstInList()
+102: 	                return true
+103: 	            }
+104: 	
+105: 	            override fun onQueryTextChange(newText: String): Boolean {
+106: 	                try {
+107: 	                    adapter.filter.filter(newText)
+108: 	                    binding.appDrawerTip.visibility = View.GONE
+109: 	                    binding.appRename.visibility = if (canRename && newText.isNotBlank()) View.VISIBLE else View.GONE
+110: 	                    binding.recyclerView.post { rebuildLetterPositions() }
+111: 	                    return true
+112: 	                } catch (e: Exception) {
+113: 	                    e.printStackTrace()
+114: 	                }
+115: 	                return false
+116: 	            }
+117: 	        })
+118: 	    }
+119: 	
+120: 	    private fun initAdapter() {
+121: 	        adapter = AppDrawerAdapter(
+122: 	            flag,
+123: 	            prefs.appLabelAlignment,
+124: 	            appClickListener = {
+125: 	                if (it.appPackage.isEmpty())
+126: 	                    return@AppDrawerAdapter
+127: 	                if (flag == Constants.FLAG_SELECT_DELAY_APP) {
+128: 	                    val set = prefs.mindfulDelayedApps.toMutableSet()
+129: 	                    set.add(it.appPackage)
+130: 	                    prefs.mindfulDelayedApps = set
+131: 	                    // Prompt for per-app delay seconds
+132: 	                    showDelayStepper(it.appPackage)
+133: 	                    findNavController().popBackStack()
+134: 	                } else {
+135: 	                    viewModel.selectedApp(it, flag)
+136: 	                    if (flag == Constants.FLAG_LAUNCH_APP || flag == Constants.FLAG_HIDDEN_APPS)
+137: 	                        findNavController().popBackStack(R.id.mainFragment, false)
+138: 	                    else
+139: 	                        findNavController().popBackStack()
+140: 	                }
+141: 	            },
+142: 	            appInfoListener = {
+143: 	                openAppInfo(
+144: 	                    requireContext(),
+145: 	                    it.user,
+146: 	                    it.appPackage
+147: 	                )
+148: 	                findNavController().popBackStack(R.id.mainFragment, false)
+149: 	            },
+150: 	            appDeleteListener = {
+151: 	                requireContext().apply {
+152: 	                    if (isSystemApp(it.appPackage))
+153: 	                        showToast(getString(R.string.system_app_cannot_delete))
+154: 	                    else
+155: 	                        uninstall(it.appPackage)
+156: 	                }
+157: 	            },
+158: 	            appHideListener = { appModel, position ->
+159: 	                adapter.appFilteredList.removeAt(position)
+160: 	                adapter.notifyItemRemoved(position)
+161: 	                adapter.appsList.remove(appModel)
+162: 	
+163: 	                val newSet = mutableSetOf<String>()
+164: 	                newSet.addAll(prefs.hiddenApps)
+165: 	                if (flag == Constants.FLAG_HIDDEN_APPS) {
+166: 	                    newSet.remove(appModel.appPackage) // for backward compatibility
+167: 	                    newSet.remove(appModel.appPackage + "|" + appModel.user.toString())
+168: 	                } else
+169: 	                    newSet.add(appModel.appPackage + "|" + appModel.user.toString())
+170: 	
+171: 	                prefs.hiddenApps = newSet
+172: 	                if (newSet.isEmpty())
+173: 	                    findNavController().popBackStack()
+174: 	                if (prefs.firstHide) {
+175: 	                    binding.search.hideKeyboard()
+176: 	                    prefs.firstHide = false
+177: 	                    viewModel.showDialog.postValue(Constants.Dialog.HIDDEN)
+178: 	                    findNavController().navigate(R.id.action_appListFragment_to_settingsFragment2)
+179: 	                }
+180: 	                viewModel.getAppList()
+181: 	                viewModel.getHiddenApps()
+182: 	            },
+183: 	            appRenameListener = { appModel, renameLabel ->
+184: 	                prefs.setAppRenameLabel(appModel.appPackage, renameLabel)
+185: 	                viewModel.getAppList()
+186: 	            }
+187: 	        )
+188: 	
+189: 	        linearLayoutManager = object : LinearLayoutManager(requireContext()) {
+190: 	            override fun scrollVerticallyBy(
+191: 	                dx: Int,
+192: 	                recycler: Recycler,
+193: 	                state: RecyclerView.State,
+194: 	            ): Int {
+195: 	                val scrollRange = super.scrollVerticallyBy(dx, recycler, state)
+196: 	                val overScroll = dx - scrollRange
+197: 	                if (overScroll < -10 && binding.recyclerView.scrollState == RecyclerView.SCROLL_STATE_DRAGGING)
+198: 	                    checkMessageAndExit()
+199: 	                return scrollRange
+200: 	            }
+201: 	        }
+202: 	
+203: 	        binding.recyclerView.layoutManager = linearLayoutManager
+204: 	        binding.recyclerView.adapter = adapter
+205: 	        binding.recyclerView.addOnScrollListener(getRecyclerViewOnScrollListener())
+206: 	        binding.recyclerView.itemAnimator = null
+207: 	        if (requireContext().isEinkDisplay().not())
+208: 	            binding.recyclerView.layoutAnimation =
+209: 	                AnimationUtils.loadLayoutAnimation(requireContext(), R.anim.layout_anim_from_bottom)
+210: 	
+211: 	        // Build initial letter positions once list is ready
+212: 	        rebuildLetterPositions()
+213: 	    }
+214: 	
+215: 	    private fun initLetterIndex() {
+216: 	        // Populate A–Z index vertically
+217: 	        binding.letterIndex.removeAllViews()
+218: 	        letters.forEach { ch ->
+219: 	            val tv = layoutInflater.inflate(R.layout.item_letter_index, binding.letterIndex, false) as TextView
+220: 	            tv.text = ch.toString()
+221: 	            binding.letterIndex.addView(tv)
+222: 	        }
+223: 	
+224: 	        // Touch handler maps Y to letter, scrolls and shows overlay
+225: 	        binding.letterIndex.setOnTouchListener { v, event ->
+226: 	            when (event.action) {
+227: 	                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
+228: 	                    val letter = letterForY(v.height, event.y)
+229: 	                    if (letter != null) {
+230: 	                        showLetterOverlay(letter)
+231: 	                        scrollToLetter(letter)
+232: 	                    }
+233: 	                    true
+234: 	                }
+235: 	                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+236: 	                    overlayHideHandler.removeCallbacks(overlayHideRunnable)
+237: 	                    overlayHideHandler.postDelayed(overlayHideRunnable, 600)
+238: 	                    true
+239: 	                }
+240: 	                else -> false
+241: 	            }
+242: 	        }
+243: 	    }
+244: 	
+245: 	    private fun letterForY(viewHeight: Int, y: Float): Char? {
+246: 	        if (viewHeight <= 0) return null
+247: 	        val slot = (y / viewHeight * letters.size).toInt().coerceIn(0, letters.size - 1)
+248: 	        return letters[slot]
+249: 	    }
+250: 	
+251: 	    private fun showLetterOverlay(letter: Char) {
+252: 	        binding.letterOverlay.text = letter.toString()
+253: 	        binding.letterOverlay.visibility = View.VISIBLE
+254: 	        overlayHideHandler.removeCallbacks(overlayHideRunnable)
+255: 	    }
+256: 	
+257: 	    private fun rebuildLetterPositions() {
+258: 	        letterPositions.clear()
+259: 	        val list = adapter.appFilteredList
+260: 	        for (i in list.indices) {
+261: 	            val ch = normalizedFirstChar(list[i].appLabel)
+262: 	            if (ch != null && ch in 'A'..'Z' && ch !in letterPositions) {
+263: 	                letterPositions[ch] = i
+264: 	            }
+265: 	        }
+266: 	    }
+267: 	
+268: 	    private fun normalizedFirstChar(label: String): Char? {
+269: 	        val trimmed = label.trim()
+270: 	        if (trimmed.isEmpty()) return null
+271: 	        val base = Normalizer.normalize(trimmed, Normalizer.Form.NFD)
+272: 	            .replace(Regex("\\p{InCombiningDiacriticalMarks}+"), "")
+273: 	            .trim()
+274: 	        return base.firstOrNull { it.isLetterOrDigit() }?.uppercaseChar()
+275: 	    }
+276: 	
+277: 	    private fun scrollToLetter(letter: Char) {
+278: 	        letterPositions[letter]?.let { pos ->
+279: 	            linearLayoutManager.scrollToPositionWithOffset(pos, 0)
+280: 	        }
+281: 	    }
+282: 	
+283: 	    private fun showDelayStepper(packageName: String) {
+284: 	        try {
+285: 	            var value = prefs.getPerAppDelaySeconds(packageName) ?: (prefs.mindfulDelayMs / 1000)
+286: 	            val dlg = AlertDialog.Builder(requireContext())
+287: 	                .setTitle(getString(R.string.mindful_delay))
+288: 	                .setMessage(packageName)
+289: 	                .setPositiveButton(R.string.okay) { _, _ ->
+290: 	                    prefs.setPerAppDelaySeconds(packageName, value)
+291: 	                }
+292: 	                .setNegativeButton(R.string.close, null)
+293: 	                .setView(LayoutInflater.from(requireContext()).inflate(R.layout.view_delay_stepper, null))
+294: 	                .create()
+295: 	            dlg.show()
+296: 	            val tvVal = dlg.findViewById<TextView>(R.id.tvValue)
+297: 	            val minus = dlg.findViewById<View>(R.id.btnMinus)
+298: 	            val plus = dlg.findViewById<View>(R.id.btnPlus)
+299: 	            tvVal?.text = value.toString()
+300: 	            minus?.setOnClickListener { value = (value - 1).coerceIn(0, 10); tvVal?.text = value.toString() }
+301: 	            plus?.setOnClickListener { value = (value + 1).coerceIn(0, 10); tvVal?.text = value.toString() }
+302: 	        } catch (e: Exception) {
+303: 	            e.printStackTrace()
+304: 	        }
+305: 	    }
+306: 	
+307: 	    private fun initObservers() {
+308: 	        viewModel.firstOpen.observe(viewLifecycleOwner) {
+309: 	            if (it && flag == Constants.FLAG_LAUNCH_APP) {
+310: 	                binding.appDrawerTip.visibility = View.VISIBLE
+311: 	                binding.appDrawerTip.isSelected = true
+312: 	            }
+313: 	        }
+314: 	        if (flag == Constants.FLAG_HIDDEN_APPS) {
+315: 	            viewModel.hiddenApps.observe(viewLifecycleOwner) {
+316: 	                it?.let {
+317: 	                    adapter.setAppList(it.toMutableList())
+318: 	                }
+319: 	            }
+320: 	        } else {
+321: 	            viewModel.appList.observe(viewLifecycleOwner) {
+322: 	                it?.let { appModels ->
+323: 	                    adapter.setAppList(appModels.toMutableList())
+324: 	                    adapter.filter.filter(binding.search.query)
+325: 	                    binding.recyclerView.post { rebuildLetterPositions() }
+326: 	                }
+327: 	            }
+328: 	        }
+329: 	    }
+330: 	
+331: 	    private fun initClickListeners() {
+332: 	        binding.appDrawerTip.setOnClickListener {
+333: 	            binding.appDrawerTip.isSelected = false
+334: 	            binding.appDrawerTip.isSelected = true
+335: 	        }
+336: 	        binding.appRename.setOnClickListener {
+337: 	            val name = binding.search.query.toString().trim()
+338: 	            if (name.isEmpty()) {
+339: 	                requireContext().showToast(getString(R.string.type_a_new_app_name_first))
+340: 	                binding.search.showKeyboard()
+341: 	                return@setOnClickListener
+342: 	            }
+343: 	
+344: 	            when (flag) {
+345: 	                Constants.FLAG_SET_HOME_APP_1 -> prefs.appName1 = name
+346: 	                Constants.FLAG_SET_HOME_APP_2 -> prefs.appName2 = name
+347: 	                Constants.FLAG_SET_HOME_APP_3 -> prefs.appName3 = name
+348: 	                Constants.FLAG_SET_HOME_APP_4 -> prefs.appName4 = name
+349: 	                Constants.FLAG_SET_HOME_APP_5 -> prefs.appName5 = name
+350: 	                Constants.FLAG_SET_HOME_APP_6 -> prefs.appName6 = name
+351: 	                Constants.FLAG_SET_HOME_APP_7 -> prefs.appName7 = name
+352: 	                Constants.FLAG_SET_HOME_APP_8 -> prefs.appName8 = name
+353: 	            }
+354: 	            findNavController().popBackStack()
+355: 	        }
+356: 	    }
+357: 	
+358: 	    private fun getRecyclerViewOnScrollListener(): RecyclerView.OnScrollListener {
+359: 	        return object : RecyclerView.OnScrollListener() {
+360: 	
+361: 	            var onTop = false
+362: 	
+363: 	            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+364: 	                super.onScrollStateChanged(recyclerView, newState)
+365: 	                when (newState) {
+366: 	
+367: 	                    RecyclerView.SCROLL_STATE_DRAGGING -> {
+368: 	                        onTop = !recyclerView.canScrollVertically(-1)
+369: 	                        if (onTop)
+370: 	                            binding.search.hideKeyboard()
+371: 	                    }
+372: 	
+373: 	                    RecyclerView.SCROLL_STATE_IDLE -> {
+374: 	                        if (!recyclerView.canScrollVertically(1))
+375: 	                            binding.search.hideKeyboard()
+376: 	                        else if (!recyclerView.canScrollVertically(-1))
+377: 	                            if (!onTop && isRemoving.not())
+378: 	                                binding.search.showKeyboard(prefs.autoShowKeyboard)
+379: 	                    }
+380: 	                }
+381: 	            }
+382: 	        }
+383: 	    }
+384: 	
+385: 	    private fun checkMessageAndExit() {
+386: 	        findNavController().popBackStack()
+387: 	        if (flag == Constants.FLAG_LAUNCH_APP)
+388: 	            viewModel.checkForMessages.call()
+389: 	    }
+390: 	
+391: 	    override fun onStart() {
+392: 	        super.onStart()
+393: 	        binding.search.showKeyboard(prefs.autoShowKeyboard)
+394: 	    }
+395: 	
+396: 	    override fun onStop() {
+397: 	        binding.search.hideKeyboard()
+398: 	        super.onStop()
+399: 	    }
+400: 	
+401: 	    override fun onDestroyView() {
+402: 	        super.onDestroyView()
+403: 	        _binding = null
+404: 	    }
+405: 	}
+

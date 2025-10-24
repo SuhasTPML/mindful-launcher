@@ -47,7 +47,7 @@ class AppDrawerFragment : Fragment() {
     private val letters: List<Char> = ('A'..'Z').toList()
     private val letterPositions: MutableMap<Char, Int> = mutableMapOf()
     private val overlayHideHandler = Handler(Looper.getMainLooper())
-    private val overlayHideRunnable = Runnable { binding.letterOverlay.visibility = View.GONE }
+    private val overlayHideRunnable = Runnable { binding.letterOverlay?.visibility = View.GONE }
 
     private val viewModel: MainViewModel by activityViewModels()
     private var _binding: FragmentAppDrawerBinding? = null
@@ -84,7 +84,7 @@ class AppDrawerFragment : Fragment() {
             binding.search.queryHint = "Please select an app"
         try {
             val searchTextView = binding.search.findViewById<TextView>(R.id.search_src_text)
-            if (searchTextView != null) searchTextView.gravity = prefs.appLabelAlignment
+            searchTextView?.gravity = prefs.appLabelAlignment
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -214,15 +214,15 @@ class AppDrawerFragment : Fragment() {
 
     private fun initLetterIndex() {
         // Populate A–Z index vertically
-        binding.letterIndex.removeAllViews()
+        binding.letterIndex?.removeAllViews()
         letters.forEach { ch ->
-            val tv = layoutInflater.inflate(R.layout.item_letter_index, binding.letterIndex, false) as TextView
+            val tv = layoutInflater.inflate(R.layout.item_letter_index, null) as TextView
             tv.text = ch.toString()
-            binding.letterIndex.addView(tv)
+            binding.letterIndex?.addView(tv)
         }
 
         // Touch handler maps Y to letter, scrolls and shows overlay
-        binding.letterIndex.setOnTouchListener { v, event ->
+        binding.letterIndex?.setOnTouchListener { v, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
                     val letter = letterForY(v.height, event.y)
@@ -249,8 +249,8 @@ class AppDrawerFragment : Fragment() {
     }
 
     private fun showLetterOverlay(letter: Char) {
-        binding.letterOverlay.text = letter.toString()
-        binding.letterOverlay.visibility = View.VISIBLE
+        binding.letterOverlay?.text = letter.toString()
+        binding.letterOverlay?.visibility = View.VISIBLE
         overlayHideHandler.removeCallbacks(overlayHideRunnable)
     }
 

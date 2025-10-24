@@ -187,13 +187,56 @@ ASCII — Overlay
 2) Home — Long-press menu with Mindful Delay toggle (no seconds edit) [COMPLETED]
 3) Manage screen — “Add App” wired to app picker + stepper [COMPLETED]
 4) Apply per-app/global delay in the launch pipeline (Home + Drawer) [COMPLETED]
-5) Drawer UI — Rounded search field + A–Z fast scroll [PENDING]
+5) Drawer UI — Rounded search field + A–Z fast scroll [COMPLETED]
 6) Overlay UI — visual enhancements [PENDING]
 
 ## Next Up (Focus)
 
-- Drawer rounded search styling to improve clarity and contrast.
-- Drawer A–Z fast scroll index with transient letter overlay while dragging.
+- Overlay visual enhancements: app icon/title prominence, larger countdown with circular progress, optional intention note, and a small “Edit delay” action.
+
+## Architecture — Drawer Fast Scroll (Current Phase)
+
+- UI structure
+  - `fragment_app_drawer.xml` adds:
+    - `SearchView#search` with rounded background `@drawable/bg_search_rounded`.
+    - `RecyclerView#recyclerView` for the app list.
+    - `TextView#letterOverlay` centered, transient overlay with `@drawable/bg_letter_overlay`.
+    - `LinearLayout#letterIndex` on the right, vertical A–Z list.
+  - Drawables/layouts:
+    - `drawable/bg_search_rounded.xml` — rounded stroke around search.
+    - `drawable/bg_letter_overlay.xml` — rounded dialog-like chip for overlay.
+    - `layout/item_letter_index.xml` — per-letter cell (TextView) used to populate index.
+- Logic (AppDrawerFragment)
+  - Fields: `letters (A..Z)`, `letterPositions: Map<Char,Int>`, overlay hide `Handler`.
+  - Build index UI in `initLetterIndex()` by inflating `item_letter_index` for each letter.
+  - Rebuild mapping in `rebuildLetterPositions()` from `adapter.appFilteredList`, using `Normalizer` to strip accents, first alphanumeric uppercase, and store first position for each A–Z.
+  - Touch handling on `letterIndex`: map touch Y to letter (`letterForY`), update overlay text/visibility, scroll via `LinearLayoutManager.scrollToPositionWithOffset`.
+  - Overlay auto-hides 600ms after touch end; mapping rebuilt after search text changes and when the list loads.
+- Notes
+  - Non-letter starters (digits/symbols) aren’t mapped; index covers A–Z only.
+  - Filter changes are posted to UI thread before rebuilding mapping to avoid race with adapter updates.
+  - Consider future: contentDescription for accessibility and adjusting index width for better touch targets.
+
+## Architecture — Overlay Enhancements (Next Phase)
+
+- UI design
+  - Enhance `activity_mindful_delay.xml`:
+    - Add app icon and bold app title under “Mindful Pause”.
+    - Replace/augment countdown TextView with circular progress (custom drawable or styled ProgressBar) and larger numeric timer.
+    - Optional intention note input (single-line EditText) below title.
+    - Keep actions: `Open Now` (gated for first 2s) and `Cancel`.
+    - Add small `Edit delay` text button linking to the app’s entry in Settings.
+- Logic
+  - Keep `MindfulDelayActivity` as the overlay controller; preserve intent extras (`packageName`, `activityClassName`, `userString`, `delayMs`).
+  - Maintain `CountDownTimer` for 1s ticks; update numeric and circular progress; gate `Open Now` for 2s as today.
+  - Implement `Edit delay` by starting the Settings activity and navigating to Manage Delayed Apps with the package preselected (Nav args or intent extras; fallback to open list if deep link unavailable).
+  - Handle rotation by saving remaining ms and restoring the timer/progress on recreate.
+- Theming & accessibility
+  - Use existing theme attrs for contrast; ensure large touch targets and TalkBack announcements for countdown changes and unlock state.
+  - Haptic feedback optional when `Open Now` becomes enabled.
+- Risks
+  - Deep-link navigation from an Activity outside the NavGraph may need a trampoline into `MainActivity`.
+  - Progress animation performance on low-end devices; prefer lightweight drawables.
 
 ## Notes & Risks
 
