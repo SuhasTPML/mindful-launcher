@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name" translatable="false">Olauncher</string>
+    <string name="app_name" translatable="false">Mindful Launcher</string>
     <string name="github" translatable="false">Github</string>
     <string name="lock_layout_description" translatable="false">lock layout description to be used a unique id to lock screen</string>
     <string name="olauncher_pro" translatable="false">Olauncher Pro</string>
@@ -144,6 +144,9 @@
     <string name="hidden_apps">Hidden apps</string>
     <string name="adapter_show">Show</string>
     <string name="adapter_hide">Hide</string>
+    <string name="mindful_delay">Mindful delay</string>
+    <string name="mindful_delay_enable">Enable delay</string>
+    <string name="mindful_delay_disable">Disable delay</string>
     <string name="are_you_using_your_phone_or_is_your_phone_using_you">Are you using your phone, or is your phone using you?</string>
     <string name="about_olauncher">About and FAQs</string>
     <string name="screen_time">Screen time</string>
@@ -156,3 +159,4 @@
     <string name="home_screen">Home screen</string>
     <string name="hey">Hey</string>
 </resources>
+

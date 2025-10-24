@@ -40,6 +40,9 @@ class Prefs(context: Context) {
     private val PRO_MESSAGE_SHOWN = "PRO_MESSAGE_SHOWN"
     private val HIDE_SET_DEFAULT_LAUNCHER = "HIDE_SET_DEFAULT_LAUNCHER"
     private val SCREEN_TIME_LAST_UPDATED = "SCREEN_TIME_LAST_UPDATED"
+    private val MINDFUL_DELAY_ENABLED = "MINDFUL_DELAY_ENABLED"
+    private val MINDFUL_DELAY_MS = "MINDFUL_DELAY_MS"
+    private val MINDFUL_DELAYED_APPS = "MINDFUL_DELAYED_APPS"
 
     private val APP_NAME_1 = "APP_NAME_1"
     private val APP_NAME_2 = "APP_NAME_2"
@@ -182,6 +185,19 @@ class Prefs(context: Context) {
     var screenTimeLastUpdated: Long
         get() = prefs.getLong(SCREEN_TIME_LAST_UPDATED, 0L)
         set(value) = prefs.edit().putLong(SCREEN_TIME_LAST_UPDATED, value).apply()
+
+    // Mindful delay before launching apps
+    var mindfulDelayEnabled: Boolean
+        get() = prefs.getBoolean(MINDFUL_DELAY_ENABLED, false)
+        set(value) = prefs.edit().putBoolean(MINDFUL_DELAY_ENABLED, value).apply()
+
+    var mindfulDelayMs: Int
+        get() = prefs.getInt(MINDFUL_DELAY_MS, 700)
+        set(value) = prefs.edit().putInt(MINDFUL_DELAY_MS, value).apply()
+
+    var mindfulDelayedApps: MutableSet<String>
+        get() = prefs.getStringSet(MINDFUL_DELAYED_APPS, mutableSetOf()) as MutableSet<String>
+        set(value) = prefs.edit().putStringSet(MINDFUL_DELAYED_APPS, value).apply()
 
     var hiddenApps: MutableSet<String>
         get() = prefs.getStringSet(HIDDEN_APPS, mutableSetOf()) as MutableSet<String>

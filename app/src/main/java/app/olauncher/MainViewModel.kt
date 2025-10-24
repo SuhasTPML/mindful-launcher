@@ -193,16 +193,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             ComponentName(packageName, activityClassName)
         }
 
-        try {
-            launcher.startMainActivity(component, userHandle, null, null)
-        } catch (e: SecurityException) {
+        viewModelScope.launch {
+            // Optional mindful delay before launching the app, per selected apps
+            if (prefs.mindfulDelayedApps.contains(packageName)) {
+                try {
+                    kotlinx.coroutines.delay(prefs.mindfulDelayMs.toLong())
+                } catch (_: Exception) { }
+            }
+
             try {
-                launcher.startMainActivity(component, android.os.Process.myUserHandle(), null, null)
+                launcher.startMainActivity(component, userHandle, null, null)
+            } catch (e: SecurityException) {
+                try {
+                    launcher.startMainActivity(component, android.os.Process.myUserHandle(), null, null)
+                } catch (e: Exception) {
+                    appContext.showToast(appContext.getString(R.string.unable_to_open_app))
+                }
             } catch (e: Exception) {
                 appContext.showToast(appContext.getString(R.string.unable_to_open_app))
             }
-        } catch (e: Exception) {
-            appContext.showToast(appContext.getString(R.string.unable_to_open_app))
         }
     }
 

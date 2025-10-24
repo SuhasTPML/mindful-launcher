@@ -21,6 +21,7 @@ import app.olauncher.databinding.AdapterAppDrawerBinding
 import app.olauncher.helper.hideKeyboard
 import app.olauncher.helper.isSystemApp
 import app.olauncher.helper.showKeyboard
+import app.olauncher.data.Prefs
 import java.text.Normalizer
 
 class AppDrawerAdapter(
@@ -173,6 +174,13 @@ class AppDrawerAdapter(
                         appTitle.visibility = View.INVISIBLE
                         appHideLayout.visibility = View.VISIBLE
                         appRename.isVisible = flag != Constants.FLAG_HIDDEN_APPS
+
+                        // Mindful delay button text based on current state
+                        val prefs = Prefs(root.context)
+                        val enabled = prefs.mindfulDelayedApps.contains(appModel.appPackage)
+                        binding.appMindfulDelay.text = root.context.getString(
+                            if (enabled) R.string.mindful_delay_disable else R.string.mindful_delay_enable
+                        )
                     }
                     true
                 }
@@ -245,6 +253,23 @@ class AppDrawerAdapter(
                 }
                 appInfo.setOnClickListener { appInfoListener(appModel) }
                 appDelete.setOnClickListener { appDeleteListener(appModel) }
+                appMindfulDelay.setOnClickListener {
+                    if (appModel.appPackage.isNotEmpty()) {
+                        val prefs = Prefs(root.context)
+                        val set = prefs.mindfulDelayedApps
+                        if (set.contains(appModel.appPackage)) {
+                            set.remove(appModel.appPackage)
+                        } else {
+                            set.add(appModel.appPackage)
+                        }
+                        prefs.mindfulDelayedApps = set
+                        // Update button text immediately
+                        val enabled = prefs.mindfulDelayedApps.contains(appModel.appPackage)
+                        appMindfulDelay.text = root.context.getString(
+                            if (enabled) R.string.mindful_delay_disable else R.string.mindful_delay_enable
+                        )
+                    }
+                }
                 appMenuClose.setOnClickListener {
                     appHideLayout.visibility = View.GONE
                     appTitle.visibility = View.VISIBLE
