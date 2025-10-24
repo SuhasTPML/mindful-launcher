@@ -28,6 +28,9 @@ import app.olauncher.helper.showKeyboard
 import app.olauncher.helper.showToast
 import app.olauncher.helper.uninstall
 import androidx.appcompat.app.AlertDialog
+import android.widget.LinearLayout
+import android.view.MotionEvent
+import android.view.View
 
 
 class AppDrawerFragment : Fragment() {
@@ -90,7 +93,7 @@ class AppDrawerFragment : Fragment() {
                 tv.alpha = 0.7f
                 container?.addView(tv)
             }
-            container?.setOnTouchListener { v, event ->
+            container?.setOnTouchListener { v: View, event: MotionEvent ->
                 if (letters.isEmpty()) return@setOnTouchListener false
                 val top = v.paddingTop
                 val height = v.height - v.paddingTop - v.paddingBottom
