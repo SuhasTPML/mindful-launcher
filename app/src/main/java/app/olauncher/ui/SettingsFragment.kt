@@ -212,7 +212,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.toggleLock.setOnClickListener(this)
         binding.mindfulDelayMinus?.setOnClickListener(this)
         binding.mindfulDelayPlus?.setOnClickListener(this)
-        binding.manageDelayedApps.setOnClickListener(this)
+        binding.manageDelayedApps?.setOnClickListener(this)
         binding.homeAppsNum.setOnClickListener(this)
         binding.screenTimeOnOff.setOnClickListener(this)
         binding.dailyWallpaperUrl.setOnClickListener(this)
