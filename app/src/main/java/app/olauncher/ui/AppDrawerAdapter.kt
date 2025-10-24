@@ -256,13 +256,14 @@ class AppDrawerAdapter(
                 appMindfulDelay.setOnClickListener {
                     if (appModel.appPackage.isNotEmpty()) {
                         val prefs = Prefs(root.context)
-                        val set = prefs.mindfulDelayedApps
-                        if (set.contains(appModel.appPackage)) {
-                            set.remove(appModel.appPackage)
+                        // Work on a copy to avoid SharedPreferences StringSet reference pitfalls
+                        val newSet = prefs.mindfulDelayedApps.toMutableSet()
+                        if (newSet.contains(appModel.appPackage)) {
+                            newSet.remove(appModel.appPackage)
                         } else {
-                            set.add(appModel.appPackage)
+                            newSet.add(appModel.appPackage)
                         }
-                        prefs.mindfulDelayedApps = set
+                        prefs.mindfulDelayedApps = newSet
                         // Update button text immediately
                         val enabled = prefs.mindfulDelayedApps.contains(appModel.appPackage)
                         appMindfulDelay.text = root.context.getString(
