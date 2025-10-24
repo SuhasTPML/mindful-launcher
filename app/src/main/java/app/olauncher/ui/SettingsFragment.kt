@@ -81,6 +81,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         populateSwipeApps()
         populateSwipeDownAction()
         populateActionHints()
+        populateMindfulDelay()
         initClickListeners()
         initObservers()
     }
@@ -165,7 +166,17 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
             R.id.github -> requireContext().openUrl(Constants.URL_OLAUNCHER_GITHUB)
             R.id.privacy -> requireContext().openUrl(Constants.URL_OLAUNCHER_PRIVACY)
             R.id.footer -> requireContext().openUrl(Constants.URL_PLAY_STORE_DEV)
+
+            R.id.mindfulDelayMinus -> updateMindfulDelay(-1)
+            R.id.mindfulDelayPlus -> updateMindfulDelay(+1)
         }
+    }
+
+    private fun updateMindfulDelay(delta: Int) {
+        val currentSec = (prefs.mindfulDelayMs / 1000).coerceAtLeast(0)
+        val newSec = (currentSec + delta).coerceIn(0, 10)
+        prefs.mindfulDelayMs = newSec * 1000
+        binding.mindfulDelayValue.text = newSec.toString()
     }
 
     override fun onLongClick(view: View): Boolean {
@@ -198,6 +209,8 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.olauncherPro.setOnClickListener(this)
         binding.autoShowKeyboard.setOnClickListener(this)
         binding.toggleLock.setOnClickListener(this)
+        binding.mindfulDelayMinus.setOnClickListener(this)
+        binding.mindfulDelayPlus.setOnClickListener(this)
         binding.homeAppsNum.setOnClickListener(this)
         binding.screenTimeOnOff.setOnClickListener(this)
         binding.dailyWallpaperUrl.setOnClickListener(this)
@@ -276,6 +289,11 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         viewModel.updateSwipeApps.observe(viewLifecycleOwner) {
             populateSwipeApps()
         }
+    }
+
+    private fun populateMindfulDelay() {
+        val seconds = prefs.mindfulDelayMs / 1000
+        binding.mindfulDelayValue.text = seconds.toString()
     }
 
     private fun toggleSwipeLeft() {

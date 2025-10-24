@@ -8,6 +8,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.pm.LauncherApps
 import android.os.UserHandle
+import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
@@ -175,43 +176,48 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun launchApp(packageName: String, activityClassName: String?, userHandle: UserHandle) {
+        // If mindful delay applies, hand off to overlay activity
+        if (prefs.mindfulDelayedApps.contains(packageName)) {
+            val intent = Intent(appContext, app.olauncher.ui.MindfulDelayActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                putExtra("packageName", packageName)
+                putExtra("activityClassName", activityClassName ?: "")
+                putExtra("userString", userHandle.toString())
+                putExtra("delayMs", prefs.mindfulDelayMs)
+            }
+            try {
+                appContext.startActivity(intent)
+            } catch (e: Exception) {
+                appContext.showToast(appContext.getString(R.string.unable_to_open_app))
+            }
+            return
+        }
+
+        // Otherwise launch immediately
         val launcher = appContext.getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
         val activityInfo = launcher.getActivityList(packageName, userHandle)
-
         val component = if (activityClassName.isNullOrBlank()) {
-            // activityClassName will be null for hidden apps.
             when (activityInfo.size) {
                 0 -> {
                     appContext.showToast(appContext.getString(R.string.app_not_found))
                     return
                 }
-
                 1 -> ComponentName(packageName, activityInfo[0].name)
                 else -> ComponentName(packageName, activityInfo[activityInfo.size - 1].name)
             }
         } else {
             ComponentName(packageName, activityClassName)
         }
-
-        viewModelScope.launch {
-            // Optional mindful delay before launching the app, per selected apps
-            if (prefs.mindfulDelayedApps.contains(packageName)) {
-                try {
-                    kotlinx.coroutines.delay(prefs.mindfulDelayMs.toLong())
-                } catch (_: Exception) { }
-            }
-
+        try {
+            launcher.startMainActivity(component, userHandle, null, null)
+        } catch (e: SecurityException) {
             try {
-                launcher.startMainActivity(component, userHandle, null, null)
-            } catch (e: SecurityException) {
-                try {
-                    launcher.startMainActivity(component, android.os.Process.myUserHandle(), null, null)
-                } catch (e: Exception) {
-                    appContext.showToast(appContext.getString(R.string.unable_to_open_app))
-                }
+                launcher.startMainActivity(component, android.os.Process.myUserHandle(), null, null)
             } catch (e: Exception) {
                 appContext.showToast(appContext.getString(R.string.unable_to_open_app))
             }
+        } catch (e: Exception) {
+            appContext.showToast(appContext.getString(R.string.unable_to_open_app))
         }
     }
 

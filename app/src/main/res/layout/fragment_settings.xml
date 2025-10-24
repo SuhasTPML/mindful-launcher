@@ -949,6 +949,57 @@
                         android:padding="10dp"
                         android:text="@string/off" />
                 </FrameLayout>
+
+                <!-- Mindful Delay Section -->
+                <TextView
+                    android:id="@+id/mindfulDelayHeader"
+                    style="@style/TextLarge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="16dp"
+                    android:text="Mindful Delay"
+                    android:textColor="?attr/primaryColor" />
+
+                <LinearLayout
+                    android:id="@+id/mindfulDelayRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="Default Delay (sec)" />
+
+                    <TextView
+                        android:id="@+id/mindfulDelayMinus"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:padding="8dp"
+                        android:text="-" />
+
+                    <TextView
+                        android:id="@+id/mindfulDelayValue"
+                        style="@style/TextLarge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="12dp"
+                        android:text="5" />
+
+                    <TextView
+                        android:id="@+id/mindfulDelayPlus"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:padding="8dp"
+                        android:text="+" />
+                </LinearLayout>
             </LinearLayout>
 
             <LinearLayout

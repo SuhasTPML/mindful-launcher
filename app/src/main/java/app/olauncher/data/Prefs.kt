@@ -192,7 +192,7 @@ class Prefs(context: Context) {
         set(value) = prefs.edit().putBoolean(MINDFUL_DELAY_ENABLED, value).apply()
 
     var mindfulDelayMs: Int
-        get() = prefs.getInt(MINDFUL_DELAY_MS, 700)
+        get() = prefs.getInt(MINDFUL_DELAY_MS, 5000)
         set(value) = prefs.edit().putInt(MINDFUL_DELAY_MS, value).apply()
 
     var mindfulDelayedApps: MutableSet<String>

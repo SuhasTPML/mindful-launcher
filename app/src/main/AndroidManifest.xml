@@ -87,6 +87,13 @@
             </intent-filter>
         </service>
 
+        <activity
+            android:name=".ui.MindfulDelayActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTop"
+            android:theme="@style/AppTheme" />
+
     </application>
 
 </manifest>
