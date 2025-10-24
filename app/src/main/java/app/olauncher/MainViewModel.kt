@@ -178,12 +178,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun launchApp(packageName: String, activityClassName: String?, userHandle: UserHandle) {
         // If mindful delay applies, hand off to overlay activity
         if (prefs.mindfulDelayedApps.contains(packageName)) {
+            val perAppSeconds = prefs.getPerAppDelaySeconds(packageName)
+            val delayMs = (perAppSeconds?.times(1000)) ?: prefs.mindfulDelayMs
             val intent = Intent(appContext, app.olauncher.ui.MindfulDelayActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 putExtra("packageName", packageName)
                 putExtra("activityClassName", activityClassName ?: "")
                 putExtra("userString", userHandle.toString())
-                putExtra("delayMs", prefs.mindfulDelayMs)
+                putExtra("delayMs", delayMs)
             }
             try {
                 appContext.startActivity(intent)

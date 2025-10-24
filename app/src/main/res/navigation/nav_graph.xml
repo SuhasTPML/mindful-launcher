@@ -53,6 +53,19 @@
             app:exitAnim="@anim/fade_exit"
             app:popEnterAnim="@anim/fade_enter"
             app:popExitAnim="@anim/fade_exit" />
+        <action
+            android:id="@+id/action_settingsFragment_to_manageDelayedAppsFragment"
+            app:destination="@id/manageDelayedAppsFragment"
+            app:enterAnim="@anim/fade_enter"
+            app:exitAnim="@anim/fade_exit"
+            app:popEnterAnim="@anim/fade_enter"
+            app:popExitAnim="@anim/fade_exit" />
     </fragment>
+
+    <fragment
+        android:id="@+id/manageDelayedAppsFragment"
+        android:name="app.olauncher.ui.ManageDelayedAppsFragment"
+        android:label="ManageDelayedAppsFragment"
+        tools:layout="@layout/fragment_manage_delayed_apps"/>
 
 </navigation>

@@ -43,6 +43,7 @@ class Prefs(context: Context) {
     private val MINDFUL_DELAY_ENABLED = "MINDFUL_DELAY_ENABLED"
     private val MINDFUL_DELAY_MS = "MINDFUL_DELAY_MS"
     private val MINDFUL_DELAYED_APPS = "MINDFUL_DELAYED_APPS"
+    private val MINDFUL_DELAY_PER_APP = "MINDFUL_DELAY_PER_APP" // entries like pkg|seconds
 
     private val APP_NAME_1 = "APP_NAME_1"
     private val APP_NAME_2 = "APP_NAME_2"
@@ -198,6 +199,30 @@ class Prefs(context: Context) {
     var mindfulDelayedApps: MutableSet<String>
         get() = prefs.getStringSet(MINDFUL_DELAYED_APPS, mutableSetOf()) as MutableSet<String>
         set(value) = prefs.edit().putStringSet(MINDFUL_DELAYED_APPS, value).apply()
+
+    var mindfulDelayPerAppEntries: MutableSet<String>
+        get() = prefs.getStringSet(MINDFUL_DELAY_PER_APP, mutableSetOf()) as MutableSet<String>
+        set(value) = prefs.edit().putStringSet(MINDFUL_DELAY_PER_APP, value).apply()
+
+    fun getPerAppDelaySeconds(packageName: String): Int? {
+        val entry = mindfulDelayPerAppEntries.firstOrNull { it.startsWith(packageName + "|") }
+        return try {
+            entry?.substringAfter('|')?.toInt()
+        } catch (e: Exception) { null }
+    }
+
+    fun setPerAppDelaySeconds(packageName: String, seconds: Int) {
+        val set = mindfulDelayPerAppEntries.toMutableSet()
+        set.removeIf { it.startsWith(packageName + "|") }
+        set.add(packageName + "|" + seconds)
+        mindfulDelayPerAppEntries = set
+    }
+
+    fun removePerAppDelay(packageName: String) {
+        val set = mindfulDelayPerAppEntries.toMutableSet()
+        set.removeIf { it.startsWith(packageName + "|") }
+        mindfulDelayPerAppEntries = set
+    }
 
     var hiddenApps: MutableSet<String>
         get() = prefs.getStringSet(HIDDEN_APPS, mutableSetOf()) as MutableSet<String>

@@ -169,6 +169,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
 
             R.id.mindfulDelayMinus -> updateMindfulDelay(-1)
             R.id.mindfulDelayPlus -> updateMindfulDelay(+1)
+            R.id.manageDelayedApps -> findNavController().navigate(R.id.action_settingsFragment_to_manageDelayedAppsFragment)
         }
     }
 
@@ -211,6 +212,7 @@ class SettingsFragment : Fragment(), View.OnClickListener, View.OnLongClickListe
         binding.toggleLock.setOnClickListener(this)
         binding.mindfulDelayMinus?.setOnClickListener(this)
         binding.mindfulDelayPlus?.setOnClickListener(this)
+        binding.manageDelayedApps.setOnClickListener(this)
         binding.homeAppsNum.setOnClickListener(this)
         binding.screenTimeOnOff.setOnClickListener(this)
         binding.dailyWallpaperUrl.setOnClickListener(this)
