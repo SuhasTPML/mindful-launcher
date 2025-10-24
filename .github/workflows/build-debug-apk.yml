@@ -28,8 +28,11 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
       - name: Build debug APK
-        run: ./gradlew assembleDebug --stacktrace
+        run: ./gradlew --no-daemon --stacktrace --warning-mode all clean assembleDebug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
