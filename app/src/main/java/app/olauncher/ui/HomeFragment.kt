@@ -44,6 +44,8 @@ import app.olauncher.helper.setPlainWallpaperByTheme
 import app.olauncher.helper.showToast
 import app.olauncher.listener.OnSwipeTouchListener
 import app.olauncher.listener.ViewSwipeTouchListener
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import android.widget.LinearLayout
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -130,14 +132,14 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
     override fun onLongClick(view: View): Boolean {
         when (view.id) {
-            R.id.homeApp1 -> showAppList(Constants.FLAG_SET_HOME_APP_1, prefs.appName1.isNotEmpty(), true)
-            R.id.homeApp2 -> showAppList(Constants.FLAG_SET_HOME_APP_2, prefs.appName2.isNotEmpty(), true)
-            R.id.homeApp3 -> showAppList(Constants.FLAG_SET_HOME_APP_3, prefs.appName3.isNotEmpty(), true)
-            R.id.homeApp4 -> showAppList(Constants.FLAG_SET_HOME_APP_4, prefs.appName4.isNotEmpty(), true)
-            R.id.homeApp5 -> showAppList(Constants.FLAG_SET_HOME_APP_5, prefs.appName5.isNotEmpty(), true)
-            R.id.homeApp6 -> showAppList(Constants.FLAG_SET_HOME_APP_6, prefs.appName6.isNotEmpty(), true)
-            R.id.homeApp7 -> showAppList(Constants.FLAG_SET_HOME_APP_7, prefs.appName7.isNotEmpty(), true)
-            R.id.homeApp8 -> showAppList(Constants.FLAG_SET_HOME_APP_8, prefs.appName8.isNotEmpty(), true)
+            R.id.homeApp1 -> showHomeSlotMenu(1)
+            R.id.homeApp2 -> showHomeSlotMenu(2)
+            R.id.homeApp3 -> showHomeSlotMenu(3)
+            R.id.homeApp4 -> showHomeSlotMenu(4)
+            R.id.homeApp5 -> showHomeSlotMenu(5)
+            R.id.homeApp6 -> showHomeSlotMenu(6)
+            R.id.homeApp7 -> showHomeSlotMenu(7)
+            R.id.homeApp8 -> showHomeSlotMenu(8)
             R.id.clock -> {
                 showAppList(Constants.FLAG_SET_CLOCK_APP)
                 prefs.clockAppPackage = ""
@@ -162,6 +164,47 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             }
         }
         return true
+    }
+
+    private fun showHomeSlotMenu(slot: Int) {
+        val dialog = BottomSheetDialog(requireContext())
+        val content = layoutInflater.inflate(R.layout.bottomsheet_home_slot, null) as LinearLayout
+        val setReplace = content.findViewById<TextView>(R.id.bsSetReplace)
+        val toggle = content.findViewById<TextView>(R.id.bsMindfulToggle)
+
+        val pkg = prefs.getAppPackage(slot)
+        val isEnabled = if (pkg.isNotBlank()) prefs.mindfulDelayedApps.contains(pkg) else false
+        val stateText = getString(if (isEnabled) R.string.mindful_delay_disable else R.string.mindful_delay_enable)
+        toggle.text = getString(R.string.mindful_delay_toggle, stateText)
+
+        setReplace.setOnClickListener {
+            dialog.dismiss()
+            when (slot) {
+                1 -> showAppList(Constants.FLAG_SET_HOME_APP_1, prefs.appName1.isNotEmpty(), true)
+                2 -> showAppList(Constants.FLAG_SET_HOME_APP_2, prefs.appName2.isNotEmpty(), true)
+                3 -> showAppList(Constants.FLAG_SET_HOME_APP_3, prefs.appName3.isNotEmpty(), true)
+                4 -> showAppList(Constants.FLAG_SET_HOME_APP_4, prefs.appName4.isNotEmpty(), true)
+                5 -> showAppList(Constants.FLAG_SET_HOME_APP_5, prefs.appName5.isNotEmpty(), true)
+                6 -> showAppList(Constants.FLAG_SET_HOME_APP_6, prefs.appName6.isNotEmpty(), true)
+                7 -> showAppList(Constants.FLAG_SET_HOME_APP_7, prefs.appName7.isNotEmpty(), true)
+                8 -> showAppList(Constants.FLAG_SET_HOME_APP_8, prefs.appName8.isNotEmpty(), true)
+            }
+        }
+
+        toggle.setOnClickListener {
+            if (pkg.isBlank()) {
+                requireContext().showToast(getString(R.string.long_press_to_select_app))
+            } else {
+                val set = prefs.mindfulDelayedApps.toMutableSet()
+                if (set.contains(pkg)) set.remove(pkg) else set.add(pkg)
+                prefs.mindfulDelayedApps = set
+                requireContext().showToast(getString(R.string.okay))
+            }
+            dialog.dismiss()
+        }
+
+        dialog.setContentView(content)
+        dialog.show()
     }
 
     private fun initObservers() {

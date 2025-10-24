@@ -27,6 +27,7 @@ import app.olauncher.helper.openUrl
 import app.olauncher.helper.showKeyboard
 import app.olauncher.helper.showToast
 import app.olauncher.helper.uninstall
+import androidx.appcompat.app.AlertDialog
 
 
 class AppDrawerFragment : Fragment() {
@@ -111,11 +112,20 @@ class AppDrawerFragment : Fragment() {
             appClickListener = {
                 if (it.appPackage.isEmpty())
                     return@AppDrawerAdapter
-                viewModel.selectedApp(it, flag)
-                if (flag == Constants.FLAG_LAUNCH_APP || flag == Constants.FLAG_HIDDEN_APPS)
-                    findNavController().popBackStack(R.id.mainFragment, false)
-                else
+                if (flag == Constants.FLAG_SELECT_DELAY_APP) {
+                    val set = prefs.mindfulDelayedApps.toMutableSet()
+                    set.add(it.appPackage)
+                    prefs.mindfulDelayedApps = set
+                    // Prompt for per-app delay seconds
+                    showDelayStepper(it.appPackage)
                     findNavController().popBackStack()
+                } else {
+                    viewModel.selectedApp(it, flag)
+                    if (flag == Constants.FLAG_LAUNCH_APP || flag == Constants.FLAG_HIDDEN_APPS)
+                        findNavController().popBackStack(R.id.mainFragment, false)
+                    else
+                        findNavController().popBackStack()
+                }
             },
             appInfoListener = {
                 openAppInfo(
@@ -185,6 +195,30 @@ class AppDrawerFragment : Fragment() {
         if (requireContext().isEinkDisplay().not())
             binding.recyclerView.layoutAnimation =
                 AnimationUtils.loadLayoutAnimation(requireContext(), R.anim.layout_anim_from_bottom)
+    }
+
+    private fun showDelayStepper(packageName: String) {
+        try {
+            var value = prefs.getPerAppDelaySeconds(packageName) ?: (prefs.mindfulDelayMs / 1000)
+            val dlg = AlertDialog.Builder(requireContext())
+                .setTitle(getString(R.string.mindful_delay))
+                .setMessage(packageName)
+                .setPositiveButton(R.string.okay) { _, _ ->
+                    prefs.setPerAppDelaySeconds(packageName, value)
+                }
+                .setNegativeButton(R.string.close, null)
+                .setView(LayoutInflater.from(requireContext()).inflate(R.layout.view_delay_stepper, null))
+                .create()
+            dlg.show()
+            val tvVal = dlg.findViewById<TextView>(R.id.tvValue)
+            val minus = dlg.findViewById<View>(R.id.btnMinus)
+            val plus = dlg.findViewById<View>(R.id.btnPlus)
+            tvVal?.text = value.toString()
+            minus?.setOnClickListener { value = (value - 1).coerceIn(0, 10); tvVal?.text = value.toString() }
+            plus?.setOnClickListener { value = (value + 1).coerceIn(0, 10); tvVal?.text = value.toString() }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun initObservers() {

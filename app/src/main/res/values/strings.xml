@@ -147,6 +147,8 @@
     <string name="mindful_delay">Mindful delay</string>
     <string name="mindful_delay_enable">Enable delay</string>
     <string name="mindful_delay_disable">Disable delay</string>
+    <string name="set_replace_app">Set/Replace App</string>
+    <string name="mindful_delay_toggle">Mindful Delay: %1$s</string>
     <string name="mindful_pause">Mindful Pause</string>
     <string name="opening_app">Opening: %1$s</string>
     <string name="starting_in_seconds">Starting in: %1$ds</string>

@@ -13,6 +13,9 @@ import app.olauncher.R
 import app.olauncher.data.Prefs
 import android.widget.TextView
 import android.widget.Button
+import androidx.core.os.bundleOf
+import androidx.navigation.fragment.findNavController
+import app.olauncher.data.Constants
 
 class ManageDelayedAppsFragment : Fragment() {
     private lateinit var prefs: Prefs
@@ -30,8 +33,10 @@ class ManageDelayedAppsFragment : Fragment() {
         recycler.adapter = Adapter()
 
         view.findViewById<View>(R.id.btnAdd)?.setOnClickListener {
-            // Navigate to app list to pick an app for delay in a future phase
-            // For now, no-op
+            findNavController().navigate(
+                R.id.appListFragment,
+                bundleOf(Constants.Key.FLAG to Constants.FLAG_SELECT_DELAY_APP)
+            )
         }
     }
 
@@ -97,4 +102,3 @@ class ManageDelayedAppsFragment : Fragment() {
         }
     }
 }
-
