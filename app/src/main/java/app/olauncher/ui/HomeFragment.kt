@@ -173,9 +173,14 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         val toggle = content.findViewById<TextView>(R.id.bsMindfulToggle)
 
         val pkg = prefs.getAppPackage(slot)
-        val isEnabled = if (pkg.isNotBlank()) prefs.mindfulDelayedApps.contains(pkg) else false
+        val hasApp = pkg.isNotBlank()
+        val isEnabled = if (hasApp) prefs.mindfulDelayedApps.contains(pkg) else false
         val stateText = getString(if (isEnabled) R.string.mindful_delay_disable else R.string.mindful_delay_enable)
         toggle.text = getString(R.string.mindful_delay_toggle, stateText)
+        if (!hasApp) {
+            toggle.isEnabled = false
+            toggle.alpha = 0.5f
+        }
 
         setReplace.setOnClickListener {
             dialog.dismiss()
@@ -191,16 +196,14 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             }
         }
 
-        toggle.setOnClickListener {
-            if (pkg.isBlank()) {
-                requireContext().showToast(getString(R.string.long_press_to_select_app))
-            } else {
+        if (hasApp) {
+            toggle.setOnClickListener {
                 val set = prefs.mindfulDelayedApps.toMutableSet()
                 if (set.contains(pkg)) set.remove(pkg) else set.add(pkg)
                 prefs.mindfulDelayedApps = set
                 requireContext().showToast(getString(R.string.okay))
+                dialog.dismiss()
             }
-            dialog.dismiss()
         }
 
         dialog.setContentView(content)
