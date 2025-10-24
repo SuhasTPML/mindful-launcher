@@ -83,14 +83,14 @@
     <!-- A–Z Fast Scroll Index -->
     <LinearLayout
         android:id="@+id/alphaIndex"
-        android:layout_width="24dp"
+        android:layout_width="36dp"
         android:layout_height="match_parent"
         android:layout_gravity="end"
         android:gravity="center_horizontal"
         android:orientation="vertical"
         android:paddingTop="180dp"
         android:paddingBottom="24dp"
-        android:paddingEnd="4dp"
+        android:paddingEnd="8dp"
         android:clipToPadding="false" />
 
     <!-- Transient Letter Overlay -->

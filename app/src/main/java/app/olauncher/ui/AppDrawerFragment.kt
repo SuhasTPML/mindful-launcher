@@ -93,7 +93,9 @@ class AppDrawerFragment : Fragment() {
                 val tv = TextView(requireContext())
                 tv.text = ch.toString()
                 tv.setTextAppearance(R.style.TextSmall)
-                tv.alpha = 0.7f
+                tv.alpha = 0.8f
+                tv.minHeight = resources.displayMetrics.density.times(24).toInt()
+                tv.setPadding(0, (resources.displayMetrics.density*2).toInt(), 0, (resources.displayMetrics.density*2).toInt())
                 container?.addView(tv)
             }
             container?.setOnTouchListener { v: android.view.View, event: MotionEvent ->
